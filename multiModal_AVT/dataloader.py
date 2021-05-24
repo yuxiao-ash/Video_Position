@@ -11,6 +11,7 @@ from torch.utils.data import Dataset
 from moviepy.editor import AudioFileClip
 
 from utils import read_video
+import torchvision.transforms as transforms
 
 
 class VideoDataset(Dataset):
@@ -224,13 +225,17 @@ class AVTDataset(Dataset):
                  feature_type='mfcc',
                  feature_lenght=8616,
                  ROI_size=(27, 36),
-                 img_size=(66, 88)):
+                 img_size=(66, 88),
+                 if_normal=False,
+                 seed=0):
         self.data_root = data_root
         self.mode = mode
         self.feature_lenght = feature_lenght
         self.feature_type = feature_type
         self.img_size = img_size
         self.ROI_size = ROI_size
+        self.if_normal = if_normal
+        self.seed = int(seed) % 7
 
         if mode == 'train' or mode == 'val':
             label_file1 = os.path.join(data_root, 'data_A/train/必选数据.txt')
@@ -246,6 +251,11 @@ class AVTDataset(Dataset):
                 for line in lines:
                     data_2.append([os.path.join('data_B/', line.split(' ')[0]), float(line.split(' ')[1])])
             self.data = data_1 + data_2
+
+            while self.seed > 0:
+                temp = self.data.pop(0)
+                self.data.append(temp)
+                self.seed -= 1
 
             if mode == 'val':
                 self.data = self.data[::7]
@@ -266,7 +276,18 @@ class AVTDataset(Dataset):
             audio = np.load(audio_path)
             audio = np.pad(audio, ((0, 0), (0, self.feature_lenght - audio.shape[1])), 'constant')
             video = read_video(video_path, self.img_size)
-            video = np.stack(video, axis=0)
+
+            if self.if_normal:
+                normal_video = []
+                for v in video:
+                    result = transforms.Compose([
+                        transforms.ToTensor(),
+                        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+                        ])(v)
+                    normal_video.append(result)
+                video = torch.stack(normal_video, dim=0).float()
+            else:
+                video = np.stack(video, axis=0).transpose((0, 3, 1, 2))
             ROI = np.load(ROI_path)
             return torch.FloatTensor(video), torch.from_numpy(audio), torch.FloatTensor([data[1] / 200]), data[
                 0] + '.mp4', torch.from_numpy(ROI).float()
@@ -278,7 +299,17 @@ class AVTDataset(Dataset):
             audio = np.load(audio_path)
             audio = np.pad(audio, ((0, 0), (0, self.feature_lenght - audio.shape[1])), 'constant')
             video = read_video(video_path, self.img_size)
-            video = np.stack(video, axis=0)
+            if self.if_normal:
+                normal_video = []
+                for v in video:
+                    result = transforms.Compose([
+                        transforms.ToTensor(),
+                        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+                        ])(v)
+                    normal_video.append(result)
+                video = torch.stack(normal_video, dim=0).float()
+            else:
+                video = np.stack(video, axis=0).transpose((0, 3, 1, 2))
             ROI = np.load(ROI_path)
             return torch.FloatTensor(video), torch.from_numpy(audio), video_path.split('/')[-1], torch.from_numpy(ROI).float()
 

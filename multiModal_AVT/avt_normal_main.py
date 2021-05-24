@@ -216,8 +216,8 @@ if __name__ == '__main__':
         test_loader = torch.utils.data.DataLoader(dataset_test, batch_size=args.batch_size, shuffle=False,
                                                   num_workers=args.num_workers, pin_memory=True)
 
-    model = AVTNet().cuda()
-    # model = AVTNet2().cuda()
+    # model = AVTNet().cuda()
+    model = AVTNet2().cuda()
     criterion = Smooth_Reg_Loss()
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.max_epoch - 1 - 5)
