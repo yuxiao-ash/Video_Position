@@ -162,7 +162,7 @@ python avt_yolt_main.py --gpus=0 --data_root=/home/insomnia/Video_Position/data/
 推理结果复制用于融合
 
 ```
-cp ./work_dir/AVTNet_YOLT/submission.csv ./fuse/submission_B_3/avt_normalize_epoch63.csv
+cp ./work_dir/AVTNet_YOLT/submission.csv ./fuse/submission_B_3/avt_YOLT_epoch63.csv
 ```
 
 
